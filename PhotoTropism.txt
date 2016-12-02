@@ -1,0 +1,36 @@
+# -----------------------------------------------------------------------------
+# PhotoTropism : Growth of plants with photophilia or photophobia behaviors
+#
+# Description :
+# - PhotoTropism is based on 1 mineral + 2 vegetal agents
+# - 'light' agent generates a standard distance field also called 'light'
+# - 'photophilia' plants put their seeds in cells with maximum light field
+# - 'photophobia' plants put their seeds in cells with minimum light field
+# - with the rules given below, each 'photophilia' agent generates only one
+#   seed, whereas 'photophobia' agent generates a new seed each 2 time steps
+# -----------------------------------------------------------------------------
+
+world 32 32 #FFF
+
+mineral light #FF0
+var light 99                # 'light' field broadcasts up to distance 99
+field light -1
+
+vegetal photophilia #0F0
+var seed 4 -1               # photophilia germination requires 4 time steps 
+birth seed = 0 photophilia  # germination when seed = 0
+var photo
+sensor photo light 1        # 'photo' stores 'light' field sensor (positive)
+
+vegetal photophobia #060
+var seed 2 -1               # photophobia germination requires 2 time steps
+birth seed < 1 photophobia  # germination when seed < 1
+status seed < 1 photophobia # reset photophobia status to generate next seed
+var photo
+sensor photo light -1       # 'photo' stores 'light' field sensor (negative)
+
+# initial configuration
+agent sun (0,16)
+agent photophilia (31,0) (31,11) (31,20) (31,31)
+agent photophobia (31,10) (31,15) (31,16) (31,21)
+# -----------------------------------------------------------------------------

@@ -1,0 +1,68 @@
+# -----------------------------------------------------------------------------
+# ForestFire : simulates fire propagation
+# -qzqzqé
+# Description :
+# - ForestFire is based on 3-state mineral agents: 'tree', 'fire', 'ash'
+# - 'fire' agents generate a 'flame' field on their 8 neighbouring cells
+# - the 'flame' field is only captured by 'tree' agents
+# - 2 adjacent 'fire' agents are needed at least to start the propagation
+# - with rules given below, a burning tree goes to 'ash' within two time steps,
+#   but this delay can be increased by additional transition rules
+# -----------------------------------------------------------------------------
+world 40 40 #FFF
+
+mineral tree #0F0
+var hot                # default: InitValue=0 TimeStepValue=0
+status hot < 2 tree    # 'tree' -> 'tree' when 'hot' < 2
+status hot > 0 fire    # 'tree' -> 'fire' when 'hot' > 1
+sensor hot flame 1     # 'flame' field is scale by 1 and stored in 'hot'
+
+mineral fire #F00
+var flame 2            # default: TimeStepValue=0
+status ash             # 'fire' -> 'ash' without condition
+field flame -1         # 'flame' field is reduced by 1 for each distance step
+                       # remember that negative field values are replaced by 0
+
+mineral ash #777       # no rules, so 'ash' -> 'ash' without condition
+
+keys (t,tree) (f,fire)
+. . t . . t t . t t . . t t . . t . . . t . . t t t t t . t . . t t . . t t t .
+. t . t . t . t . t . . . . t t . t . t t . t t . t t t . . . . t . t t t . . t
+t . . . . . t . . t . . . . t t t . . . t t . t t . t . t . . . . . t . . t t t
+t . t . t . . t t t t t t . t . t t t . . . t . . . t . . t t t . t t . . . . t
+. . t t . t . t . . . . . . . . t . t t t t . . t . t t t . . . . t t . . t t t
+. . . . t t t t . . t t . t t t t t t . t . t t t t t t t . . . . t . . t t . t
+. t . t t . . t t t . t . . t . . t . . t . . t t . . . t . . t . . . t t t t t
+t t . t . . . t . . . . . t t . t t . t . t . . t t . t t t t t t . t . . . t .
+t t t t . . t . . t t t . . . . t . t t t t . t . . t . . t . t . t t . . t t t
+t t t t t t t t . t t . . . . t t t t t t . . t t . . t . . . . . t t t . t t t
+t . t . . . . . . t . t . t . . . . t . . . . . . t t t . t t . . . t t . . t .
+. t t t . . t . t t t t . . . . . t . . . . t t . . t t . t . t t t . . t t . t
+t . . . t . . . t . . t . t t t t . t . . . t t t . . t . . t t . . t t t t t t
+t t t t . t . t t . t t . t t . t . t . . t . t t t t . . . t t t t . . t t . t
+t . . t t . . t . t . t . t t . t t t . . . . . t . t . t . . . . . . t t . . t
+. . t . . t t t . t t . t . . t . . t t t t t t t t . t . . . . . t . t . . t t
+. . . . . t . . . . t t t t t . . . . . . t t . t . t . . t t t t t . t . . t t
+t . . t . t t t t t . . t . . . t . . t . t . . t t . . . t . . t t t t . . . t
+. . t . t t . . t t t . t t t t . . t t t . . t t . . . . . . . t . . t t . t .
+. t . . . t t . . t t . . . t . . t . . . t . t . t t . . . t . . . . . t . . t
+t t . t . t t t t t . t t t t t t t t t . t t . . . t . . . t . . t t t t . . t
+. . t t t . t t t . t . t . . t t t . . t . t t t t . . . . . t . . . t t . t t
+t t t t t t t t . . t t t t . t . t t t t . . . . . t t t . . . . t . . t . t .
+t t t t . t t t . t t t . . . . . . t . t t . t t . . t t . t . . t . . . . . .
+t t t t t . . . t . . . t . . . t t t t . . t . t t . t t t . t t . . t t . . t
+t t t t . . . t . . t t t . . . . t t t t t . . t . t t . . . t t . t t t t . t
+t . . t t t . t t t t . . . t . t . . t t . t . t . . . . t t . . t t . t t . .
+t t . t t . t . . t . t t t . . t . . . . t . t t t . . t . t t t . . t t . . .
+t . t . . t . t t . . . . t t t . . . t . t . t t t t t t . t . . . t t . . t .
+. t . t t . t . t t . t . t t . . . t t . t . t . . t t t . t . . t . t t . . .
+t t . . . t t t . t t t t . . t . . . t . . t . t t . . t . . . . t t . t . . .
+. t t . . . t t t t . t t . . t t t . . t t t t . . . t . t . t t t . . t . . t
+. t t . t t t t t . t . t . . . t t t . . t t . t t t t . . t t t . . t . t t t
+t . t . t . . t . . t t . t . t . . t t t t . t . . . . t . t . . t t t t t t .
+. t . . . . t . t . t t . . . . . . . . t t t t t t . . t t . . t t t . t . t .
+t . . t . t t t t t . t . . t . . t t . . . t t . t t . t . . . . t . t . . t .
+. t . . t t t . . t . t . . . t . . . t . t t t t t t . . t . . t t t . . t . .
+t . t . t . t t t . t t . t t . . . . . . t . t t t t . . t . . . t . . . . t .
+t . . t . t . t . . t t t t . . t t t . t . t t . . t . t t t t . . . t t . . t
+t t . . t t . t t . . t . t . . t t . . . f t t t t . . t t . t t t . . t . t t
