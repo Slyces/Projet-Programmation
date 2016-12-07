@@ -8,7 +8,7 @@
 # - 'dead' and 'live' agents have a 'neighbour' sensor for this 'life' field
 # -----------------------------------------------------------------------------
 
-world 16 16 #FFF
+world 8 16 #FFF
 
 mineral dead #FFF
 var neighbour               # default: InitValue=0 TimeStepValue=0
@@ -20,8 +20,8 @@ sensor neighbour life 1     # 'life' field is scale by 1 and stored in 'neighbou
 mineral live #000
 var life 2                  # default: TimeStepValue=0
 var neighbour               # default: InitValue=0 TimeStepValue=0
-status neighbour < 2 dead
 status neighbour < 4 live   # 'live' -> 'live' only when 'neighbour' == 2 or 3
+status neighbour < 2 dead
 status neighbour > 3 dead
 field life -1
 sensor neighbour life 1
@@ -29,7 +29,7 @@ sensor neighbour life 1
 # initial configuration for the pentadecathlon oscillator (period 15)
 keys (-,dead) (+,live)
 - + - - - - - - - - - - - - - -
-- - +- - - - - - - - - - - - - -
+- - + - - - - - - - - - - - - -
 + + + - - - - - - - - - - - - -
 - - - - - - - - - - - - - - - -
 - - - - - - - - - - - - - - - -

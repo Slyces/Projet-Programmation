@@ -17,10 +17,10 @@ status active < 1 conductor
 status active > 2 conductor
 sensor active electric 1
 
-mineral tail #F00
+animal tail #F00
 status conductor             # 'tail' -> 'conductor' without condition
 
-mineral head #00F
+vegetal head #00F
 var electric 2               # default: TimeStepValue=0
 status tail                  # 'head' -> 'tail' without condition
 field electric -1
@@ -46,5 +46,5 @@ t . . . . . . . . . . . . . . . . . . . + . . . . . . . . . . . . . . . . . . +
 + . . . . . . . . . . . . . . . . . . . + . . . . . . . . . . . . . . . . . . +
 + . . . . . . . . . . . . . . . . . . . + . . . . . . . . . . . . . . . . . . +
 + . . . . . . . . . . . . . . . . . . . + . . . . . . . . . . . . . . . . . . +
-. + + + + + + + + + + + + + + + + + h t + + + + + + + + + + + + + + + + + + + .
+. + + + + + + + + + + + + + + + + + h t . + + + + + + + + + + + + + + + + + + .
 # -----------------------------------------------------------------------------

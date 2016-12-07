@@ -8,7 +8,7 @@
 # - 'head' and 'tail' are the two adjacent parts of a moving electron
 # - 'head' generates an 'electric' field only captured by 'conductor'
 # -----------------------------------------------------------------------------
-world 1 15 #000
+world 1 16 #000
 
 mineral conductor #FF0
 var active                   # default: InitValue=0 TimeStepValue=0
@@ -27,5 +27,5 @@ field electric -1
 
 # set two electrons moving on a single horizontal wire (use slice notation)
 agent head (0,0) (0,8)
-agent conductor (0,1:7) (0,9:15)
+agent conductor (0,1:7) (0,9:16)
 # -----------------------------------------------------------------------------

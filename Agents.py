@@ -1,124 +1,194 @@
 # =============================================================================
 '''
-This file codes every type of agents and how they interact with each-other
+Quick description of the file
 '''
 # =============================================================================
 __author__ = 'Simon Lassourreuille'
-__version__ = ''
-__date__ = '02/11/2016'
+__version__ = '2.0'
+__date__ = '05/12/2016'
 __email__ = 'simon.lassourreuille@etu.u-bordeaux.fr'
 __status__ = 'Prototype'
 # =============================================================================
-# Imports
-# from random import random, randint as rdi
-import Status
-from Field import Field
+from Debugger import Debugger as D
+from copy import deepcopy
+from World import dist
 
+D.verbose = 0
 
-# =============================================================================
 class Agent(object):
-    """
-    An Agent is an entity interacting with the world.
-    """
-    # Counter of instances of Agents
-    __id = 0
 
-    def __init__(self, pos, type: str, status={}, field=Field(1, 5),
-                 sensors: dict={}):
+    states = {}
+    def __init__(self, state: str, *position):
+        if len(position) == 1:
+            position = position[0]
+        self.x, self.y = position
+
+        # Init of attributes
+        self.__state = ''
+        self.color = ''
+        self.vars = {}
+        self.status = []
+        self.fields = {}
+        self.sensors = {}
+        self.state = state
+
+    # =========================================================================
+    # Static methods
+    @staticmethod
+    def add_state(name: str, state: 'State'):
+        Agent.states[name] = state
+
+    # =========================================================================
+    @property
+    def state(self):
+        return self.__state
+
+    @state.setter
+    def state(self, string: str):
+        self.set_state(string)
+
+    @property
+    def pos(self):
+        return (self.x, self.y)
+
+    # ─────────────────────────────────────────────────────────
+    def check_statement(self, *statement) -> bool:
+        " Checks a statement like 'active','<',3, returns a boolean "
+        if len(statement) == 1:
+            return True
+        else :
+            varname, symbol, threshold = statement
+        if symbol not in ('=', '<', '>'):
+            raise TypeError("The symbol given in check statement is wrong")
+        # -------------------------------------------
+        if symbol == '=':
+            return self.vars[varname][0] == threshold
+        elif symbol == '<':
+            return self.vars[varname][0] < threshold
+        else:
+            return self.vars[varname][0] > threshold
+
+    # ─────────────────────────────────────────────────────────
+    def set_state(self, target_state: str):
         """
-        :param pos: starting position
-        :param status: a dict of status { StatusName : status, ... }
-                see status
-        :param sensors: A dict structured like :
-                { AgentType : value, AgentType : value, ... }
+         A state stores every information about an Agent.
+         See the States class file to know more
         """
-        # Id of agent to differenciate them easily
-        self.id = Agent.__id
-        Agent.__id += 1
+        assert target_state in self.__class__.states.keys()
 
-        # Basic attributes
-        self.type = type
-        self.field = field
-        self.sensors = sensors
-        self.status = status
-        self.__color = '#000000'
+        state = self.__class__.states[target_state]
 
-        # Death status for every type of Agent
-        self.status['Death'] = Status.Death()
-        for status in self.status.keys():
-            self.status[status].start()  # Starting status
+        self.__state = target_state
+        self.color = state.color # str not mutable
+        self.vars = deepcopy(state.vars) # dict mutable
+        self.status = deepcopy(state.status) # dict mutable
+        self.fields = deepcopy(state.fields) # dict mutable
+        self.sensors = deepcopy(state.sensors) # dict mutable
 
-        # Position of the Agent
-        self.pos = pos
+    # ─────────────────────────────────────────────────────────
+    def check_status(self):
+        new_state = self.state
+        for elements in self.status:  # status are [ target_state, statement]
+            if self.check_statement(*elements[1]):
+                new_state = elements[0]
+        self.state = new_state
 
-    def set_field(self, field):
-        """ Function to modify field in a status """
-        self.field = field
-
-    def set_sensor(self,type: str, value: int):
-        """ Function to modify sensor in a status """
-        self.sensors[type] = value
-
-    def sense(self, fields, x, y):
-        """ Returns the perception of an agent for a cell of coords (x,y) """
-        value = 0  # The value is set to 0 by default
-        for type in self.sensors.keys():  # Parsing every type available
-            value += self.sensors[type]*fields[type][x][y]
-            #  Multiply each sensor by the value of the corresponding field
-            #  at the cell (x,y), and adds this to the value
+    # ─────────────────────────────────────────────────────────
+    def sense_var(self, varname: str, fields: dict, *pos: tuple) -> float:
+        """
+        Senses the new value of one var according to the fields.
+        Removes own interfering fields
+        """
+        a,b = pos[0] if len(pos) == 0 else pos
+        value = 0
+        D.print("Looking at var :", varname)
+        for (field, scale) in self.sensors[varname]:
+            value += scale * fields[field][a][b]
+            if field in self.fields.keys():
+                value -= self.emmit(field, dist(self.pos,pos)) * scale
+        D.print("On position {} I'd have a new var {} of {}".format(self.pos, varname, value))
         return value
 
-    def age(self):
-        """ Makes the Agent 'older' by using each status' time function """
-        for status in self.status.values():
-           status.time()
+    # -------------------------------------------------------------------------
+    def sense_and_change(self, fields: dict):
+        new_vars = {} # Storing results in another variable cause we might
+            # reuse one old variable to compensate for the field it emmits
+        for varname in self.sensors.keys():
+            new_vars[varname] = self.sense_var(varname, fields, *self.pos)
+        for varname in self.sensors.keys():
+            self.vars[varname][0] = new_vars[varname]
 
-    def get_color(self):
-        """ Return the Agent's color """
-        return self.__color
+    # ─────────────────────────────────────────────────────────
+    def time_effect(self):
+        """ Marks the effect of time using timestep of vars """
+        for varname in self.vars.keys():
+            self.vars[varname][0] += self.vars[varname][1]
 
-    def set_color(self, color):
-        """ Sets the Agent's color """
-        self.__color = color
+    # ─────────────────────────────────────────────────────────
+    def emmit(self, key: str, dist: int):
+        return max(0, self.vars[key][0] + dist * self.fields[key])
 
-    def __getitem__(self, string: str):
-        return self.status[string]
+    # -------------------------------------------------------------------------
+    def field_range(self, key: str, max_lines: int, max_cols: int):
+        if key in self.fields.keys():
+            # r is the number such as a - r*b > 0 ; a - (r+1)*b <= 0
+            r = abs(self.vars[key][0]) // abs(self.fields[key]) - int(
+                abs(self.vars[key][0]) % abs(self.fields[key]) == 0)
+            for a in range(max(0, self.x - r),
+                           min(self.x + r, max_lines-1) + 1):
+                for b in range(max(0, self.y - r),
+                               min(self.y + r, max_cols - 1) + 1):
+                    yield (a, b)
 
-    def __setitem__(self, key, value):
-        self.status[key] = value
-
-    def __bool__(self):
-        return bool(self['Death'])
-
-    def death(self):
-        self['Death'](1)
+    # ─────────────────────────────────────────────────────────
+    def __repr__(self):
+        return self.state[0].capitalize()
 
 # =============================================================================
-class Proie(Agent):
-    def __init__(self, pos):
-        Agent.__init__(self, pos, 'Proie',
-                       field= Field(20,10,0,reduction='High'),
-                       sensors={'Proie':1,'Predateur':-100, 'Vegetal':0})
+class Mineral(Agent):
+    def __init__(self, state, *position):
+        Agent.__init__(self, state, *position)
 
-    def get_color(self):
-        return 'black'
-
-class Predateur(Agent):
-    def __init__(self, pos):
-        Agent.__init__(self, pos, 'Predateur',
-                       field=Field(20, 6, reduction='None'),
-                       status={'Hunger':Status.Hunger(self, 'Proie'),'Age':Status.Age(self)},
-                       sensors={'Proie': 400, 'Predateur': 0, 'Vegetal':0})
-        self.colored = 'red'
-
-    def get_color(self):
-        return self.colored
-
+# =============================================================================
 class Vegetal(Agent):
-    def __init__(self, pos):
-        Agent.__init__(self, pos, 'Vegetal',
-                       field=Field(1,5,0,'High'),
-                       sensors={'Proie':0, 'Predateur':0, 'Vegetal':1})
+    def __init__(self, state, *position):
+        Agent.__init__(self, state, *position)
 
-    def get_color(self):
-        return 'green'
+# =============================================================================
+class Animal(Vegetal):
+    def __init__(self, state, *position):
+        Vegetal.__init__(self, state, *position)
+
+# =============================================================================
+class State(object):
+    """ Main class defining what is the state of an Agent """
+
+    def __init__(self, color, vars: dict, fields: dict,
+                 status: list, sensors: dict):
+        """
+        A state object does not do much except holding important informations
+        to set up Agents
+        :param name: Is the name of the state.
+        :param vars: A dict of vars :
+            { 'name' : [ init_value = 0, time_step_value = 0],
+            'hunger' : [ 100, -5 ], 'age' : [ 0 , 1 ] }
+        :param fields: A dict of fields :
+            { 'name' : scaling,
+              'blue' : -1, 'red' : -1 }
+        :param status: list of status :
+            [[ target state, statement ],
+             [ 'END', ['life', '<', 0] ]]
+        :param sensors: dict of sensors
+            { 'hosting_var' : [['impacting_field', scale], ...],
+              'comfort' : [['blue', +0.7], ['red', -0.3]] }
+        """
+        self.color = color
+        self.vars = vars
+        self.fields = fields
+        self.status = status
+        self.sensors = sensors
+
+if __name__ == '__main__':
+    Agent.add_state('test', State('',{'a':[2,0]},{'a':-1},[],{}))
+    agent = Agent('test', 10,10)
+    print(list(agent.field_range('a', 20, 20)))

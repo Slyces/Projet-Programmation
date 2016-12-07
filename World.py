@@ -4,105 +4,105 @@ Quick description of the file
 '''
 # =============================================================================
 __author__ = 'Simon Lassourreuille'
-__version__ = ''
-__date__ = '24/11/2016'
+__version__ = '2.0'
+__date__ = '05/12/2016'
 __email__ = 'simon.lassourreuille@etu.u-bordeaux.fr'
 __status__ = 'Prototype'
 # =============================================================================
 import ezCLI
+import ezTK
 import tkinter as tk
-from Agent import AgentFactory, create_Agent, create_state
-from Parser import parser, parse_map
+from Debugger import Debugger as D
 
-verbose = 3
+def dist(a,b):
+    a0,a1 = a
+    b0,b1 = b
+    return max(abs(a0-b0), abs(a1-b1))
 
-def dist(pos0, pos1):
-    x0,y0 = pos0
-    x1,y1 = pos1
-    return max(abs(x0-x1), abs(y0-y1))
-
+# =============================================================================
 class World(object):
     """ Grille rectangulaire sur laquelle évoluent les Agents """
 
-    def __init__(self, n: int, m: int, color: str)->'World':
-        """
-        Respectivement le nombre de lignes et colonnes
-        """
-        self.nb_lines,self.nb_cols = n,m
-        self.__cells = [[0 for i in range(m)] for j in range(n)]
+    def __init__(self, n: int, m: int, color: str) -> 'World':
+        """ Respectivement le nombre de lignes et colonnes """
+        self.nb_lines, self.nb_cols = n, m
+        self.__cells = [['' for i in range(m)] for j in range(n)]
         self.fields = {}
         self.agents = []
+        self.color = color
+
+    @property
+    def size(self):
+        return (self.nb_lines, self.nb_cols)
 
     def __getitem__(self, item):
-        if isinstance(item, (tuple, list)) and len(item)==2:
+        if isinstance(item, (tuple, list)) and len(item) == 2:
             return self.__cells[item[0]][item[1]]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value)->None:
         if isinstance(key, (tuple, list)):
             self.__cells[key[0]][key[1]] = value
 
     def __repr__(self):
-        return ezCLI.grid(self.__cells,size=3)
+        return ezCLI.grid(self.__cells, size=3)
 
+    # -------------------------------------------------------------------------
+    def add_agent(self, agent)->None:
+        """
+        :param agents: tuple of Agents or one Agent
+        :return:
+        """
+        self[agent.pos] = agent
+        self.agents.append(agent)
+        # Updating the fields maps
+        keys = self.fields.keys()  # get the fields registered
+        for agent in self.agents:
+            for key in agent.fields.keys():
+                if key not in keys:  # register a new field
+                    self.fields[key] = [[0 for i in range(self.nb_cols)]
+                                        for j in range(self.nb_lines)]
+
+    # =========================================================================
     def update(self):
         self.update_fields()
         self.update_agents()
 
-    def add_agents(self, *agents):
-        for agent in agents :
-            self[agent.pos] = agent
-            self.agents.append(agent)
-        # Updating the fields maps
-        keys = self.fields.keys() # get the fields registered
-        for agent in self.agents:
-            for key in agent.fields.keys():
-                if key not in keys : # register a new field
-                    self.fields[key] = [[0 for i in range(self.nb_cols)]
-                                           for j in range(self.nb_lines)]
-
+    # ─────────────────────────────────────────────────────────
     def update_fields(self):
-        # Init of the fields
+        # Init of the field
         for key in self.fields.keys():
             self.fields[key] = [[0 for i in range(self.nb_cols)]
-                                   for j in range(self.nb_lines)]
-            for agent in self.agents:
-                if key in agent.fields.keys():
-                    for i in range(self.nb_lines):
-                        for j in range(self.nb_cols):
-                            self.fields[key][i][j] += agent.emmit(key, dist(agent.pos, (i,j)))
-        if verbose > 0:
-            print(ezCLI.grid(self.fields['life'], size=3))
-            pass
-
-    def update_agents(self):
-        if verbose >= 1 :
-            print("========================================")
+                                for j in range(self.nb_lines)]
         for agent in self.agents:
-            for field in self.fields.keys():
-                if verbose >= 1 :
-                    print('----------------------------------------')
-                    print("Sensing a field at position : {} {}, value : {}".format(agent.x,agent.y,self.fields[field][agent.x][agent.y]))
-                agent.sense(field, self.fields[field][agent.x][agent.y])
-                if verbose >= 1 :
-                    print('----------------------------------------')
-                agent.test_status()
+            for key in agent.fields.keys():
+                for (i, j) in agent.field_range(key, *self.size):
+                    self.fields[key][i][j] += agent.emmit(
+                                                key, dist(agent.pos, (i, j)))
+    # ─────────────────────────────────────────────────────────
+    def update_agents(self):
+        for agent in self.agents:
+            agent.sense_and_change(self.fields)
+            agent.time_effect()
+            agent.check_status()
 
-def load_file(filename='Wireworld.txt'):
-    parsed = parser(filename)
+# One try
+class GraphicWorldEZTK(ezTK.Win):
+    def __init__(self, world: 'World', cell_size:int=20, refresh:int = 250):
+        self.world = world
+        ezTK.Win.__init__(self, fold=self.world.nb_cols)
+        for loop in range(self.world.nb_cols*self.world.nb_lines):
+            ezTK.Brick(self, bg=self.world.color, height=cell_size,
+                       width=cell_size)
+        self.refresh = refresh
+        self.graphic_update()
 
-    # Configuring the new Agent
-    states = []
-    for block in parsed:
-        # Creating the world
-        if block[0][0] == 'world':
-            world = World(*block[0][1:])
-        if block[0][0] in ('mineral', 'animal', 'vegetal'):
-            states.append(create_state(block))
-        if block[0][0] == 'agent':
-            AgentCreator = AgentFactory(states)# Assuming agents are at the end
-            agents = create_Agent(AgentCreator, block) # Creating agents
-            world.add_agents(*agents) # Adding them into the world
-    return world
+    def graphic_update(self):
+        for i in range(self.world.nb_lines):
+            for j in range(self.world.nb_cols):
+                self[i][j]['bg'] = self.world.color if not \
+                                     self.world[i,j] else self.world[i,j].color
+        self.world.update()
+        self.after(self.refresh, self.graphic_update)
 
 class GraphicWorld(World,tk.Tk):
     def __init__(self, world: 'World', *args, **kwargs):
@@ -122,15 +122,7 @@ class GraphicWorld(World,tk.Tk):
         for i in range(self.world.nb_lines):
             for j in range(self.world.nb_cols):
                 if not self.world[i,j] :
-                    self.frames[i][j]['bg'] = '#FFF'
+                    self.frames[i][j]['bg'] = self.world.color
                 else:
-                    if verbose >= 3 :
-                        print(self.world[i, j], self.world[i, j].color)
                     self.frames[i][j]['bg'] = self.world[i,j].color
-        self.after(25, self.update_frames)
-
-if __name__ == '__main__':
-    world =load_file('Game of Life')
-    window = GraphicWorld(world)
-    window.mainloop()
-
+        self.after(200, self.update_frames)

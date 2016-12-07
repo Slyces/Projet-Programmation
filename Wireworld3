@@ -8,7 +8,7 @@
 # - 'head' and 'tail' are the two adjacent parts of a moving electron
 # - 'head' generates an 'electric' field only captured by 'conductor'
 # -----------------------------------------------------------------------------
-world 7 17 #000
+world 7 6 #FFF
 
 mineral conductor #FF0
 var active                   # default: InitValue=0 TimeStepValue=0
@@ -27,11 +27,11 @@ field electric -1
 
 # set two electrons moving on a single horizontal wire (use slice notation)
 keys (h,head) (c,conductor) (t,tail)
-. . . . . . . c c . . . . . . . .
-c c c c c c c c . c c c c c c c c
-c . . . . . . c c . . . . . . . c
-c . . . . . . . . . . . . . . . c
-c . . . . . . c c . . . . . . . c
-c c c c c c c . c c c c h c c c c
-. . . . . . . c c . . . . . . . .
+. . c c . .
+c c c . c c
+c . c c . c
+c . . . . h
+c . c c . c
+c c . c c c
+. . c c . .
 # -----------------------------------------------------------------------------

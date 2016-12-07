@@ -9,7 +9,7 @@
 # - with rules given below, a burning tree goes to 'ash' within two time steps,
 #   but this delay can be increased by additional transition rules
 # -----------------------------------------------------------------------------
-world 40 40 #FFF
+world 20 20 #FFF
 
 mineral tree #0F0
 var hot                # default: InitValue=0 TimeStepValue=0
@@ -25,44 +25,5 @@ field flame -1         # 'flame' field is reduced by 1 for each distance step
 
 mineral ash #777       # no rules, so 'ash' -> 'ash' without condition
 
-keys (t,tree) (f,fire)
-. . t . . t t . t t . . t t . . t . . . t . . t t t t t . t . . t t . . t t t .
-. t . t . t . t . t . . . . t t . t . t t . t t . t t t . . . . t . t t t . . t
-t . . . . . t . . t . . . . t t t . . . t t . t t . t . t . . . . . t . . t t t
-t . t . t . . t t t t t t . t . t t t . . . t . . . t . . t t t . t t . . . . t
-. . t t . t . t . . . . . . . . t . t t t t . . t . t t t . . . . t t . . t t t
-. . . . t t t t . . t t . t t t t t t . t . t t t t t t t . . . . t . . t t . t
-. t . t t . . t t t . t . . t . . t . . t . . t t . . . t . . t . . . t t t t t
-t t . t . . . t . . . . . t t . t t . t . t . . t t . t t t t t t . t . . . t .
-t t t t . . t . . t t t . . . . t . t t t t . t . . t . . t . t . t t . . t t t
-t t t t t t t t . t t . . . . t t t t t t . . t t . . t . . . . . t t t . t t t
-t . t . . . . . . t . t . t . . . . t . . . . . . t t t . t t . . . t t . . t .
-. t t t . . t . t t t t . . . . . t . . . . t t . . t t . t . t t t . . t t . t
-t . . . t . . . t . . t . t t t t . t . . . t t t . . t . . t t . . t t t t t t
-t t t t . t . t t . t t . t t . t . t . . t . t t t t . . . t t t t . . t t . t
-t . . t t . . t . t . t . t t . t t t . . . . . t . t . t . . . . . . t t . . t
-. . t . . t t t . t t . t . . t . . t t t t t t t t . t . . . . . t . t . . t t
-. . . . . t . . . . t t t t t . . . . . . t t . t . t . . t t t t t . t . . t t
-t . . t . t t t t t . . t . . . t . . t . t . . t t . . . t . . t t t t . . . t
-. . t . t t . . t t t . t t t t . . t t t . . t t . . . . . . . t . . t t . t .
-. t . . . t t . . t t . . . t . . t . . . t . t . t t . . . t . . . . . t . . t
-t t . t . t t t t t . t t t t t t t t t . t t . . . t . . . t . . t t t t . . t
-. . t t t . t t t . t . t . . t t t . . t . t t t t . . . . . t . . . t t . t t
-t t t t t t t t . . t t t t . t . t t t t . . . . . t t t . . . . t . . t . t .
-t t t t . t t t . t t t . . . . . . t . t t . t t . . t t . t . . t . . . . . .
-t t t t t . . . t . . . t . . . t t t t . . t . t t . t t t . t t . . t t . . t
-t t t t . . . t . . t t t . . . . t t t t t . . t . t t . . . t t . t t t t . t
-t . . t t t . t t t t . . . t . t . . t t . t . t . . . . t t . . t t . t t . .
-t t . t t . t . . t . t t t . . t . . . . t . t t t . . t . t t t . . t t . . .
-t . t . . t . t t . . . . t t t . . . t . t . t t t t t t . t . . . t t . . t .
-. t . t t . t . t t . t . t t . . . t t . t . t . . t t t . t . . t . t t . . .
-t t . . . t t t . t t t t . . t . . . t . . t . t t . . t . . . . t t . t . . .
-. t t . . . t t t t . t t . . t t t . . t t t t . . . t . t . t t t . . t . . t
-. t t . t t t t t . t . t . . . t t t . . t t . t t t t . . t t t . . t . t t t
-t . t . t . . t . . t t . t . t . . t t t t . t . . . . t . t . . t t t t t t .
-. t . . . . t . t . t t . . . . . . . . t t t t t t . . t t . . t t t . t . t .
-t . . t . t t t t t . t . . t . . t t . . . t t . t t . t . . . . t . t . . t .
-. t . . t t t . . t . t . . . t . . . t . t t t t t t . . t . . t t t . . t . .
-t . t . t . t t t . t t . t t . . . . . . t . t t t t . . t . . . t . . . . t .
-t . . t . t . t . . t t t t . . t t t . t . t t . . t . t t t t . . . t t . . t
-t t . . t t . t t . . t . t . . t t . . . f t t t t . . t t . t t t . . t . t t
+agent choice(empty,tree) (1:20,1:20) (0,1:20) (1:20,0)
+agent fire (0,0)

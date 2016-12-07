@@ -1,0 +1,31 @@
+# -----------------------------------------------------------------------------
+# Segregation : Shelling's model of segregation
+#             http://nifty.stanford.edu/2014/mccown-schelling-model-segregation
+# Description :
+# - Segregation is based on 2-state animal agents: 'red' and 'blue'
+# - 'red' agents generate a 'red' field on the 8 neighbouring cells
+# - 'blue' agents generate a 'blue' field on the 8 neighbouring cells
+# - 'red' agents try to move toward maximal 'red' field and minimal 'blue' field
+# - 'blue' agents try to move toward maximal 'blue' field and minimal 'red' field
+# - stronger/weaker segregation is observed when changing sensitivity values
+# - stronger/weaker segregation is observed when changing field distance
+# -----------------------------------------------------------------------------
+world 32 32 #FFF
+
+animal red #F00
+var red 2
+field red -1                # 'red' field is limited to 8 neighbouring cells
+var comfort
+sensor comfort red 0.7      # 'comfort' is increased by 'red' field'
+sensor comfort blue -0.3    # 'comfort' is decreased by 'blue' field'
+
+animal blue #00F
+var blue 2
+field blue -1               # 'blue' field is limited to 8 neighbouring cells
+var comfort
+sensor comfort red -0.3     # 'comfort' is decreased by 'red' field'
+sensor comfort blue 0.7     # 'comfort' is increased by 'blue' field'
+
+# initial configuration (using random choice between 'empty', 'red', 'blue')
+agent choice(empty,red,blue) (0:32,0:32)
+# -----------------------------------------------------------------------------
