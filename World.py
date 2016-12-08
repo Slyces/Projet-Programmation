@@ -17,7 +17,7 @@ from Debugger import Debugger as D
 def dist(a,b):
     a0,a1 = a
     b0,b1 = b
-    return max(abs(a0-b0), abs(a1-b1))
+    return max([abs(a0-b0), abs(a1-b1)])
 
 # =============================================================================
 class World(object):
@@ -32,7 +32,7 @@ class World(object):
         self.color = color
 
     @property
-    def size(self):
+    def size(self)->tuple:
         return (self.nb_lines, self.nb_cols)
 
     def __getitem__(self, item):
@@ -80,16 +80,40 @@ class World(object):
                                                 key, dist(agent.pos, (i, j)))
     # ─────────────────────────────────────────────────────────
     def update_agents(self):
+        newborns = set()
         for agent in self.agents:
             agent.sense_and_change(self.fields)
             agent.time_effect()
+            newborns |= self.check_birth(agent)
             agent.check_status()
-
+            # Checking end & death
+            if agent.state == 'death':
+                i,j = agent.pos
+                self[i,j] = ''
+                self.agents.remove(agent)
+        for newborn in newborns:
+            # __class__ state pos
+            self.add_agent(newborn[0](newborn[1],*newborn[2]))
+    # ─────────────────────────────────────────────────────────
+    def check_birth(self, agent):
+        newborns = set()
+        for children in agent.births.keys():
+            if agent.check_statement(*agent.births[children]):
+                selected = agent.give_birth(self.__cells, self.fields, *self.size)
+                if selected :
+                    newborns.add((agent.__class__,children,selected))
+        return newborns
+# ────────────────────────────────────────────────────────────
 # One try
 class GraphicWorldEZTK(ezTK.Win):
-    def __init__(self, world: 'World', cell_size:int=20, refresh:int = 250):
+    def __init__(self, world: 'World', refresh:int = 250):
         self.world = world
         ezTK.Win.__init__(self, fold=self.world.nb_cols)
+        # Computing the size of every frame
+        width = int(self.winfo_screenwidth() * 0.99)
+        height = int(self.winfo_screenheight() * 0.80)
+        cell_size = min(width//self.world.nb_cols, height//self.world.nb_lines)
+        # ---------------------------------
         for loop in range(self.world.nb_cols*self.world.nb_lines):
             ezTK.Brick(self, bg=self.world.color, height=cell_size,
                        width=cell_size)
@@ -104,19 +128,29 @@ class GraphicWorldEZTK(ezTK.Win):
         self.world.update()
         self.after(self.refresh, self.graphic_update)
 
+
+# ────────────────────────────────────────────────────────────
 class GraphicWorld(World,tk.Tk):
     def __init__(self, world: 'World', *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
         self.world = world
-        self.frames = [[None for i in range(self.world.nb_cols)] for j in range(self.world.nb_lines)]
-        size = 20
-        self.T = [[False for i in range(self.world.nb_cols)] for j in range(self.world.nb_lines)]
+        self.frames = [[None for i in range(self.world.nb_cols)]
+                       for j in range(self.world.nb_lines)]
+
+        # Computing the size of every frame
+        width = int(self.winfo_screenwidth() * 0.80)
+        height = int(self.winfo_screenheight() * 0.80)
+        size = min(width // self.world.nb_cols, height // self.world.nb_lines)
+        # ---------------------------------
+        self.T = [[False for i in range(self.world.nb_cols)]
+                  for j in range(self.world.nb_lines)]
         for i in range(self.world.nb_lines):
             for j in range(self.world.nb_cols):
                 self.frames[i][j] = tk.Frame(self, height=size, width=size)
                 self.frames[i][j].grid(row=i,column=j,padx=1,pady=1)
         self.update_frames()
 
+    # ─────────────────────────────────────────────────────────
     def update_frames(self):
         self.world.update()
         for i in range(self.world.nb_lines):
@@ -125,4 +159,5 @@ class GraphicWorld(World,tk.Tk):
                     self.frames[i][j]['bg'] = self.world.color
                 else:
                     self.frames[i][j]['bg'] = self.world[i,j].color
-        self.after(200, self.update_frames)
+        self.after(10, self.update_frames)
+    # ─────────────────────────────────────────────────────────

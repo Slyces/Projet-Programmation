@@ -12,12 +12,49 @@ __status__ = 'Prototype'
 from Debugger import Debugger as D
 from copy import deepcopy
 from World import dist
+from ezCLI import grid
+from random import choice
 
 D.verbose = 0
 
+# =============================================================================
+class State(object):
+    """ Main class defining what is the state of an Agent """
+
+    def __init__(self, color, vars: dict, fields: dict,
+                 status: list, sensors: dict, births: dict):
+        """
+        A state object does not do much except holding important informations
+        to set up Agents
+        :param name: Is the name of the state.
+        :param vars: A dict of vars :
+            { 'name' : [ init_value = 0, time_step_value = 0],
+            'hunger' : [ 100, -5 ], 'age' : [ 0 , 1 ] }
+        :param fields: A dict of fields :
+            { 'name' : scaling,
+              'blue' : -1, 'red' : -1 }
+        :param status: list of status :
+            [[ target state, statement ],
+             [ 'END', ['life', '<', 0] ]]
+        :param sensors: dict of sensors
+            { 'hosting_var' : [['impacting_field', scale], ...],
+              'comfort' : [['blue', +0.7], ['red', -0.3]] }
+        :param births: dict of births
+            {   'created_state' : statement,
+                'photophobia' : [ 'seed', '<', 1 ] }
+        """
+        self.color = color
+        self.vars = vars
+        self.fields = fields
+        self.status = status
+        self.sensors = sensors
+        self.births = births
+# =============================================================================
+
 class Agent(object):
 
-    states = {}
+    states = {'death':State("",{},{},[],{},{}),
+              'end': State("", {}, {}, [], {}, {})}
     def __init__(self, state: str, *position):
         if len(position) == 1:
             position = position[0]
@@ -30,6 +67,7 @@ class Agent(object):
         self.status = []
         self.fields = {}
         self.sensors = {}
+        self.births = {}
         self.state = state
 
     # =========================================================================
@@ -84,14 +122,16 @@ class Agent(object):
         self.status = deepcopy(state.status) # dict mutable
         self.fields = deepcopy(state.fields) # dict mutable
         self.sensors = deepcopy(state.sensors) # dict mutable
+        self.births = deepcopy(state.births)
 
     # ─────────────────────────────────────────────────────────
     def check_status(self):
-        new_state = self.state
+        new_state = 0
         for elements in self.status:  # status are [ target_state, statement]
             if self.check_statement(*elements[1]):
                 new_state = elements[0]
-        self.state = new_state
+        if new_state :
+            self.state = new_state
 
     # ─────────────────────────────────────────────────────────
     def sense_var(self, varname: str, fields: dict, *pos: tuple) -> float:
@@ -101,12 +141,10 @@ class Agent(object):
         """
         a,b = pos[0] if len(pos) == 0 else pos
         value = 0
-        D.print("Looking at var :", varname)
         for (field, scale) in self.sensors[varname]:
             value += scale * fields[field][a][b]
             if field in self.fields.keys():
                 value -= self.emmit(field, dist(self.pos,pos)) * scale
-        D.print("On position {} I'd have a new var {} of {}".format(self.pos, varname, value))
         return value
 
     # -------------------------------------------------------------------------
@@ -154,39 +192,35 @@ class Vegetal(Agent):
     def __init__(self, state, *position):
         Agent.__init__(self, state, *position)
 
+    def give_birth(self, cells, fields, max_lines, max_cols):
+        birth_zone = self.birth_zone(cells, max_lines, max_cols)
+        if not birth_zone:
+            return
+        best = []
+        score = -2*10**20
+        for (i,j) in birth_zone:
+            for sensor in self.sensors.keys():
+                sense = self.sense_var(sensor, fields, i, j)
+                if sense > score:
+                    best = [(i,j)]
+                    score = sense
+                if sense == score:
+                    best.append((i,j))
+        return choice(best)
+
+    def birth_zone(self, cells, max_lines, max_cols):
+        coords = []
+        for (i,j) in [(0,1),(0,-1),(1,0),(-1,0)]:
+            if 0 <= self.x+i <= max_lines-1 and 0 <= self.y+j <= max_cols-1 \
+                                             and not cells[self.x+i][self.y+j]:
+                coords.append((self.x+i,self.y+j))
+        return coords
+
 # =============================================================================
 class Animal(Vegetal):
     def __init__(self, state, *position):
         Vegetal.__init__(self, state, *position)
-
 # =============================================================================
-class State(object):
-    """ Main class defining what is the state of an Agent """
-
-    def __init__(self, color, vars: dict, fields: dict,
-                 status: list, sensors: dict):
-        """
-        A state object does not do much except holding important informations
-        to set up Agents
-        :param name: Is the name of the state.
-        :param vars: A dict of vars :
-            { 'name' : [ init_value = 0, time_step_value = 0],
-            'hunger' : [ 100, -5 ], 'age' : [ 0 , 1 ] }
-        :param fields: A dict of fields :
-            { 'name' : scaling,
-              'blue' : -1, 'red' : -1 }
-        :param status: list of status :
-            [[ target state, statement ],
-             [ 'END', ['life', '<', 0] ]]
-        :param sensors: dict of sensors
-            { 'hosting_var' : [['impacting_field', scale], ...],
-              'comfort' : [['blue', +0.7], ['red', -0.3]] }
-        """
-        self.color = color
-        self.vars = vars
-        self.fields = fields
-        self.status = status
-        self.sensors = sensors
 
 if __name__ == '__main__':
     Agent.add_state('test', State('',{'a':[2,0]},{'a':-1},[],{}))

@@ -66,6 +66,7 @@ def parser(filename: str = 'ForestFire') -> list:
             k += 1
     # Now dealing with maps representation, with the keyword keys
     for i in range(len(blocks)):
+        # print(blocks[i])
         if blocks[i][0][0] == 'keys':
             blocks[i] = parse_map(blocks[i])
     return blocks
@@ -125,7 +126,7 @@ def create_state(block: list):
         or 'animal ...'
     """
     name, color = block[0][1:]  # mineral name color
-    vars, status, fields, sensors = {}, [], {}, {}
+    vars, status, fields, sensors, births = {}, [], {}, {}, {}
     for line in block[1:]:
         # Creating vars
         if line[0] == "var":
@@ -153,9 +154,12 @@ def create_state(block: list):
         if line[0] == 'field':
             # field variable reduction
             fields[line[1]] = line[2]
-    return State(color, vars, fields, status, sensors)
-# =============================================================================
+        if line[0] == 'birth':
+            # birth seed < 1 photophobia
+            births[line[4]] = line[1:4]
 
+    return State(color, vars, fields, status, sensors, births)
+# =============================================================================
 def load(filename='Wireworld'):
     parsed = parser(filename)
 
@@ -199,5 +203,5 @@ if __name__ == '__main__':
     #             agent.sensors.pop('test')
     #     world.update_agents()
     #     print(world)
-    world = GraphicWorld(load('Game of Life'))
+    world = GraphicWorld(load('PhotoTropism'))
     world.mainloop()
