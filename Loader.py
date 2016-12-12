@@ -4,17 +4,21 @@ Quick description of the file
 '''
 # =============================================================================
 __author__ = 'Simon Lassourreuille'
-__version__ = '2.0'
+__version__ = '2.1'
 __date__ = '04/12/2016'
 __email__ = 'simon.lassourreuille@etu.u-bordeaux.fr'
 __status__ = 'Prototype'
 # =============================================================================
 import ezCLI
 from World import World, GraphicWorld
-from Agents import Mineral, Vegetal, Animal, State
+from Agents import Agent,Mineral, Vegetal, Animal, State
 from random import choice
 from Debugger import Debugger as D
 
+# -----------------------------------------------------------------------------
+# Possible distances for Agents
+def manhattan(a, b):
+    return sum([abs(a[0] - b[0]), abs(a[1] - b[1])])
 
 # -----------------------------------------------------------------------------
 
@@ -66,6 +70,7 @@ def parser(filename: str = 'ForestFire') -> list:
             k += 1
     # Now dealing with maps representation, with the keyword keys
     for i in range(len(blocks)):
+        # print(blocks[i])
         if blocks[i][0][0] == 'keys':
             blocks[i] = parse_map(blocks[i])
     return blocks
@@ -125,7 +130,7 @@ def create_state(block: list):
         or 'animal ...'
     """
     name, color = block[0][1:]  # mineral name color
-    vars, status, fields, sensors = {}, [], {}, {}
+    vars, status, fields, sensors, births = {}, [], {}, {}, {}
     for line in block[1:]:
         # Creating vars
         if line[0] == "var":
@@ -153,9 +158,12 @@ def create_state(block: list):
         if line[0] == 'field':
             # field variable reduction
             fields[line[1]] = line[2]
-    return State(color, vars, fields, status, sensors)
-# =============================================================================
+        if line[0] == 'birth':
+            # birth seed < 1 photophobia
+            births[line[4]] = line[1:4]
 
+    return State(color, vars, fields, status, sensors, births)
+# =============================================================================
 def load(filename='Wireworld'):
     parsed = parser(filename)
 
@@ -174,6 +182,10 @@ def load(filename='Wireworld'):
             for line in block :
                 for i in range(len(line) - 2):
                     world.add_agent(classes[states_classes[line[1]]](line[1], *line[2 + i]))
+        if block[0][0] == 'dist':
+            # dist manhatan
+            dists = {'manhattan': manhattan}
+            Agent.dist = staticmethod(dists[block[0][1]])
     return world
 
 
@@ -199,5 +211,5 @@ if __name__ == '__main__':
     #             agent.sensors.pop('test')
     #     world.update_agents()
     #     print(world)
-    world = GraphicWorld(load('Game of Life'))
+    world = GraphicWorld(load('PhotoTropism 5'))
     world.mainloop()

@@ -8,7 +8,7 @@
 # - 'head' and 'tail' are the two adjacent parts of a moving electron
 # - 'head' generates an 'electric' field only captured by 'conductor'
 # -----------------------------------------------------------------------------
-world 5 16 #000
+world 5 16 #FFF
 
 mineral conductor #FF0
 var active                   # default: InitValue=0 TimeStepValue=0
